@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { Plus, FileText, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/clerk-react";
-import { getResume } from "@/lib/tsquery";
+import { getResume } from "@/lib/query";
+import { uploadResume } from "@/lib/mutation";
+
+const MAXIMUN_FILE_SIZE = 5 * 1024 * 1024;
 
 const ResumeSection = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -12,38 +15,54 @@ const ResumeSection = () => {
 
   const { userId, getToken } = useAuth();
 
-  if (!userId) return null;
-
-  const { data, isPending } = useQuery({
-    queryKey: ["resume", userId],
-    enabled: !!userId,
+  const { data } = useQuery({
+    queryKey: ["resumes", userId],
     queryFn: async () => {
       const token = await getToken();
-      return getResume(userId, token!);
+      return getResume(token!);
+    },
+  });
+
+  const uploadResumeMutation = useMutation({
+    mutationKey: ["uploadResume", userId],
+    mutationFn: async (file: File) => {
+      const token = await getToken();
+      return uploadResume(file, token!);
     },
   });
 
   useEffect(() => {
-    if (data) {
+    if (data && data.length) {
       setResume(data);
     }
   }, [data]);
+
+  if (!userId) {
+    return (
+      <div className="border border-green-500/20 rounded-xl p-6 bg-black/60">
+        <p className="text-gray-400">Please sign in to upload your resume</p>
+      </div>
+    );
+  }
 
   const handleFileSelect = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
     if (file.type !== "application/pdf") {
       alert("Only PDF resumes are allowed");
       return;
     }
 
-    setUploading(true);
+    if (file.size > MAXIMUN_FILE_SIZE) {
+      alert("Upload file less than 5 MB");
+      return;
+    }
 
+    setUploading(true);
     try {
-      //   await uploadResume(file);
+      uploadResumeMutation.mutate(file);
       setResume(file);
     } catch (err) {
       alert("Upload failed");
@@ -58,7 +77,7 @@ const ResumeSection = () => {
       <h2 className="text-xl font-semibold mb-4 text-green-400">Your Resume</h2>
 
       {resume ? (
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between text-black">
           <div className="flex items-center gap-2">
             <FileText className="text-green-400" />
             <span className="text-gray-300">{resume.name}</span>

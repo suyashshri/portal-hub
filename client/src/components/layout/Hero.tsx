@@ -1,6 +1,24 @@
+import { useClerk, useUser } from "@clerk/clerk-react";
 import { Button } from "../ui/button";
+import { useNavigate } from "@tanstack/react-router";
 
 const HeroSection = () => {
+  const { isSignedIn } = useUser();
+  const { openSignIn } = useClerk();
+  const navigate = useNavigate();
+
+  const handleSignIn = () => {
+    if (isSignedIn) {
+      navigate({
+        to: `/dashboard`,
+      });
+    } else {
+      openSignIn({
+        redirectUrl: "/dashboard",
+      });
+      return;
+    }
+  };
   return (
     <section className="min-h-[55vh] flex flex-col items-center justify-center text-center px-6 bg-black text-white border-b border-gray-700">
       <h1 className="text-5xl md:text-6xl font-bold font-mono tracking-tight text-green-400">
@@ -13,11 +31,15 @@ const HeroSection = () => {
       </p>
 
       <div className="mt-10 flex gap-4">
-        <Button className="h-12 px-8 bg-green-400 text-black hover:bg-green-300">
+        <Button
+          onClick={handleSignIn}
+          className="h-12 px-8 bg-green-400 text-black hover:bg-green-300"
+        >
           Upload Resume
         </Button>
 
         <Button
+          onClick={handleSignIn}
           variant="outline"
           className="h-12 px-8 transition border-green-400 text-green-600 hover:bg-green-400 hover:text-black"
         >
