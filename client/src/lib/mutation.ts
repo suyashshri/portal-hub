@@ -23,7 +23,11 @@ export const uploadResume = async (file: File, token: string) => {
     const { url, resumeId } = response.data;
 
     // Uploading to S3 from frontend using preSignedUrl
-    const uploadToS3 = await axios.post(url, file);
+    const uploadToS3 = await axios.put(url, file, {
+      headers: {
+        "Content-Type": file.type,
+      },
+    });
 
     const status = uploadToS3.status;
 
@@ -37,7 +41,7 @@ export const uploadResume = async (file: File, token: string) => {
       `${BACKEND_BASEURL}/resume/upload`,
       {
         resumeId,
-        status,
+        status: status.toString(),
       },
       {
         headers: {

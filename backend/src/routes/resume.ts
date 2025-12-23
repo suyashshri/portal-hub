@@ -70,9 +70,9 @@ router.post("/pre-signed-url", clerkMiddleware, async (req, res) => {
   }
 });
 
-router.post("/upload", clerkMiddleware, async (req, res) => {
+router.put("/upload", clerkMiddleware, async (req, res) => {
   try {
-    const data = req.query;
+    const data = req.body;
     const parsedData = uploadedFile.safeParse(data);
 
     if (!parsedData.success) {
@@ -89,7 +89,7 @@ router.post("/upload", clerkMiddleware, async (req, res) => {
         id: resumeId,
       },
       data: {
-        uploaded: status === "200" ? "COMPLETED" : "FAILED",
+        uploaded: status.startsWith("2") ? "COMPLETED" : "FAILED",
       },
     });
 
